@@ -186,4 +186,77 @@ describe("computeStats", () => {
       expect(msgs[i]).toBeLessThanOrEqual(msgs[i - 1]);
     }
   });
+
+  it("resolves Windows backslash paths to session slugs", () => {
+    const windowsData: ParsedData = {
+      statsCache: null,
+      history: [
+        {
+          display: "test",
+          timestamp: 1704067200000,
+          project: "C:\\Users\\alice\\dev\\myproject",
+          sessionId: "s1",
+          pastedContents: {},
+        },
+      ],
+      sessions: [
+        {
+          sessionId: "s1",
+          projectPath: "C--Users-alice-dev-myproject",
+          messages: [
+            {
+              uuid: "m1",
+              parentUuid: null,
+              isSidechain: false,
+              type: "user",
+              timestamp: "2024-01-01T09:00:00Z",
+            },
+            {
+              uuid: "m2",
+              parentUuid: "m1",
+              isSidechain: false,
+              type: "assistant",
+              timestamp: "2024-01-01T09:00:05Z",
+              message: {
+                role: "assistant",
+                content: "Done.",
+                model: "claude-sonnet-4",
+                stop_reason: "end_turn",
+                usage: { input_tokens: 50, output_tokens: 20 },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const stats = computeStats(windowsData);
+    const projectNames = stats.topProjectStats.map((p) => p.name);
+    expect(projectNames).toContain("C:\\Users\\alice\\dev\\myproject");
+    expect(stats.projectActivity["C:\\Users\\alice\\dev\\myproject"]).toBe(2);
+  });
+
+  it("extracts username from Windows-style cwd paths", () => {
+    const windowsData: ParsedData = {
+      statsCache: null,
+      history: [],
+      sessions: [
+        {
+          sessionId: "s1",
+          projectPath: "C--Users-bob-dev-app",
+          messages: [
+            {
+              uuid: "m1",
+              parentUuid: null,
+              isSidechain: false,
+              type: "user",
+              timestamp: "2024-01-01T09:00:00Z",
+              cwd: "C:\\Users\\bob\\dev\\app",
+            },
+          ],
+        },
+      ],
+    };
+    const stats = computeStats(windowsData);
+    expect(stats.username).toBe("bob");
+  });
 });

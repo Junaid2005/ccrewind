@@ -198,7 +198,7 @@ export function computeStats(data: ParsedData): ComputedStats {
   // Build slug→realPath from history so we can resolve session folder names
   for (const entry of history) {
     if (entry.project) {
-      const slug = entry.project.replaceAll("/", "-");
+      const slug = entry.project.replaceAll("\\", "-").replaceAll("/", "-").replaceAll(":", "-");
       slugToPath[slug] = entry.project;
       projectSet.add(entry.project);
     }
@@ -434,15 +434,15 @@ function extractUsername(history: HistoryEntry[], sessions: { messages: { cwd?: 
   for (const session of sessions) {
     for (const msg of session.messages) {
       if (msg.cwd) {
-        // /home/username/... or /Users/username/...
-        const match = msg.cwd.match(/^\/(?:home|Users)\/([^/]+)/);
+        // /home/username/... or /Users/username/... or C:\Users\username\...
+        const match = msg.cwd.match(/^(?:\/(?:home|Users)\/|[A-Za-z]:\\[Uu]sers\\)([^/\\]+)/);
         if (match) return match[1];
       }
     }
   }
   for (const entry of history) {
     if (entry.project) {
-      const match = entry.project.match(/^\/(?:home|Users)\/([^/]+)/);
+      const match = entry.project.match(/^(?:\/(?:home|Users)\/|[A-Za-z]:\\[Uu]sers\\)([^/\\]+)/);
       if (match) return match[1];
     }
   }
