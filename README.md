@@ -1,3 +1,5 @@
+hi
+
 # Claude Code Rewind
 
 > There's no way to see your Claude Code usage. We changed that. Your developer archetype. Your token costs. Your Claude ELO. Nobody else has touched this data. Find out where you actually stand.
