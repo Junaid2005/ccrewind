@@ -160,61 +160,111 @@ function PreviewCards() {
 }
 
 function TabContentNPM({ active }: { active: boolean }) {
-  const [lines, setLines] = useState<number>(0);
-  useEffect(() => {
-    if (!active) {
-      setLines(0);
-      return;
-    }
-    const timeouts = [
-      setTimeout(() => setLines(1), 50),
-      setTimeout(() => setLines(2), 100),
-      setTimeout(() => setLines(3), 150),
-      setTimeout(() => setLines(4), 200),
-      setTimeout(() => setLines(5), 250),
-    ];
-    return () => timeouts.forEach(clearTimeout);
-  }, [active]);
+  const [copied, setCopied] = useState(false);
+  const copyCmd = () => {
+    navigator.clipboard.writeText("npx ccrewind");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const hourBars = [40, 30, 25, 20, 10, 10, 10, 15, 20, 30, 35, 45, 60, 70, 80, 95, 75, 30, 15, 50, 55, 65, 50, 45];
 
   return (
-    <div className="bg-[#1e1e1e] border border-on-surface/10 rounded-xl p-5 w-full font-mono text-[13px] shadow-xl relative mt-2">
-      <div className="flex items-center gap-2 mb-4 opacity-80">
-        <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-        <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-      </div>
-      <div className="text-on-surface/80 space-y-1.5 min-h-[140px]">
-        <p>
-          <span className="text-primary">$</span> npx ccrewind
+    <div className="w-full mt-2 mb-4">
+      <div className="bg-[#1e1e1e] border border-on-surface/10 rounded-xl p-4 w-full font-mono text-[11px] shadow-xl leading-relaxed">
+        <div className="flex items-center gap-1.5 mb-3 opacity-60">
+          <div className="w-2 h-2 rounded-full bg-[#ff5f56]"></div>
+          <div className="w-2 h-2 rounded-full bg-[#ffbd2e]"></div>
+          <div className="w-2 h-2 rounded-full bg-[#27c93f]"></div>
+        </div>
+
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[13px] text-on-surface/70">
+            <span className="text-primary">$</span> npx ccrewind
+          </span>
+          <button
+            onClick={copyCmd}
+            className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors shrink-0"
+          >
+            {copied ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        <p className="text-primary font-bold text-center text-[12px] tracking-wider mb-3">⟡ CC REWIND ⟡</p>
+
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="border border-primary/20 rounded p-2 text-center">
+            <p className="text-primary font-bold text-[14px]">$361</p>
+            <p className="text-on-surface/25 text-[8px] uppercase tracking-wider mt-0.5">cost</p>
+          </div>
+          <div className="border border-primary/20 rounded p-2 text-center">
+            <p className="text-primary font-bold text-[14px]">585M</p>
+            <p className="text-on-surface/25 text-[8px] uppercase tracking-wider mt-0.5">tokens</p>
+          </div>
+          <div className="border border-primary/20 rounded p-2 text-center">
+            <p className="text-primary font-bold text-[14px]">8.4K</p>
+            <p className="text-on-surface/25 text-[8px] uppercase tracking-wider mt-0.5">messages</p>
+          </div>
+        </div>
+
+        <p className="text-on-surface/40 mb-2">
+          <span className="text-primary">───</span> ACTIVITY BY HOUR <span className="text-primary">───</span>
         </p>
-        {lines >= 1 && <p className="text-primary font-bold tracking-wider mt-2">◆ CC REWIND ◆</p>}
-        {lines >= 2 && <p className="text-on-surface/50">Reading ~/.claude...</p>}
-        {lines >= 3 && (
-          <p>
-            Your character: <span className="text-primary">The Quant</span>
-          </p>
-        )}
-        {lines >= 4 && (
-          <p>
-            Claude Elo: <span className="font-bold">847 / 1000</span>
-          </p>
-        )}
-        {lines >= 5 && <p className="text-on-surface/40 mt-3 italic">→ ccrewind.com for the full story</p>}
-      </div>
-      <div className="mt-4 border-t border-on-surface/10 pt-3 flex items-center justify-end gap-2">
-        <a href="https://www.npmjs.com/package/ccrewind" target="_blank" rel="noreferrer">
-          <img
-            src="https://img.shields.io/npm/v/ccrewind?style=flat-square&color=ff6b35&labelColor=1a1a1a&label=npm"
-            alt="npm version"
-          />
-        </a>
-        <a href="https://badge.socket.dev/npm/package/ccrewind/1.0.0" target="_blank" rel="noreferrer">
-          <img
-            src="https://badge.socket.dev/npm/package/ccrewind/1.0.0"
-            alt="Socket Badge"
-            style={{ height: "20px" }}
-          />
-        </a>
+        <div className="flex items-end gap-[2px] h-10 mb-1">
+          {hourBars.map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-sm"
+              style={{
+                height: `${h}%`,
+                background: h >= 70 ? "#ff6b35" : h >= 40 ? "rgba(255,107,53,0.5)" : "rgba(255,107,53,0.2)",
+                opacity: active ? 1 : 0,
+                transition: `opacity 0.2s ease ${i * 0.02}s`,
+              }}
+            />
+          ))}
+        </div>
+        <p className="text-on-surface/25 text-[9px] mb-3">peak: 3pm (736 messages)</p>
+
+        <div className="border-t border-on-surface/10 pt-3 flex items-center justify-end gap-2">
+          <a href="https://www.npmjs.com/package/ccrewind" target="_blank" rel="noreferrer">
+            <img
+              src="https://img.shields.io/npm/v/ccrewind?style=flat-square&color=ff6b35&labelColor=1a1a1a&label=npm"
+              alt="npm version"
+              style={{ height: "20px" }}
+            />
+          </a>
+          <a href="https://badge.socket.dev/npm/package/ccrewind" target="_blank" rel="noreferrer">
+            <img src="https://badge.socket.dev/npm/package/ccrewind" alt="Socket Badge" style={{ height: "20px" }} />
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -228,59 +278,73 @@ function TabContentClaude() {
     setTimeout(() => setCopied(false), 1500);
   };
   return (
-    <div className="w-full">
-      <h3 className="font-headline font-bold text-on-surface mb-3 text-lg">Run inside Claude Code</h3>
-      <div className="relative overflow-hidden bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3 shadow-lg mb-4">
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-full shrink-0" />
-        <code className="flex flex-col gap-0.5 overflow-hidden min-w-0">
-          <span className="font-mono text-sm text-primary font-medium tracking-wide whitespace-nowrap">
-            npx ccrewind --setup
-          </span>
-          <span className="font-mono text-xs whitespace-nowrap" style={{ color: "rgba(39,201,63,0.45)" }}>
-            # registers slash commands
-          </span>
-        </code>
-        <button
-          onClick={copyCmd}
-          className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors shrink-0"
-        >
-          {copied ? (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          ) : (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-          )}
-        </button>
-      </div>
-      <div className="flex gap-2">
-        <div className="bg-surface-container-low border border-on-surface/5 p-3 rounded-xl flex-1 flex items-center justify-center font-mono text-[11px] text-on-surface">
-          <span className="text-primary/90">/ccrewind</span>
+    <div className="w-full mt-2 mb-4">
+      <div className="bg-[#1e1e1e] border border-on-surface/10 rounded-xl p-5 w-full font-mono text-[13px] shadow-xl leading-relaxed">
+        <div className="flex items-center gap-2 mb-4 opacity-60">
+          <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
         </div>
-        <div className="bg-surface-container-low border border-on-surface/5 p-3 rounded-xl flex-1 flex items-center justify-center font-mono text-[11px] text-on-surface">
-          <span className="text-primary/90">/ccrewind-ui</span>
+
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[15px] text-on-surface/70">
+            <span className="text-primary">$</span> npx ccrewind --setup
+          </span>
+          <button
+            onClick={copyCmd}
+            className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/80 transition-colors shrink-0"
+          >
+            {copied ? (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : (
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            )}
+          </button>
         </div>
+
+        <p className="mb-4 text-[12px]" style={{ color: "rgba(39,201,63,0.45)" }}>
+          # Then use inside any Claude Code session ↓
+        </p>
+
+        <p className="text-on-surface/40 mb-3">
+          <span className="text-primary">───</span> SLASH COMMANDS <span className="text-primary">───</span>
+        </p>
+
+        <div className="space-y-2.5 mb-4">
+          <p>
+            <span style={{ color: "rgba(39,201,63,0.75)" }}>✓</span> <span className="text-primary">/ccrewind</span>{" "}
+            <span className="text-on-surface/30">— TUI report in your terminal</span>
+          </p>
+          <p>
+            <span style={{ color: "rgba(39,201,63,0.75)" }}>✓</span> <span className="text-primary">/ccrewind-ui</span>{" "}
+            <span className="text-on-surface/30">— Open web UI in browser</span>
+          </p>
+        </div>
+
+        <p className="text-on-surface/25 text-[11px]">registered to ~/.local/share/ccrewind/</p>
       </div>
     </div>
   );
@@ -295,9 +359,35 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
   const [showHiddenHelp, setShowHiddenHelp] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState<"npm" | "web" | "claude">("web");
-  const [everExpandedNpm, setEverExpandedNpm] = useState(false);
+  const [activeTab, setActiveTab] = useState<"npm" | "web" | "claude">("npm");
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [cycleKey, setCycleKey] = useState(0);
+  const [cycleActive, setCycleActive] = useState(true);
+  const TABS = ["npm", "web", "claude"] as const;
+  const CYCLE_MS = 6000;
+
+  useEffect(() => {
+    if (!cycleActive) return;
+    const timer = setInterval(() => {
+      setActiveTab((prev) => {
+        const idx = TABS.indexOf(prev);
+        return TABS[(idx + 1) % TABS.length];
+      });
+      setCycleKey((k) => k + 1);
+    }, CYCLE_MS);
+    return () => clearInterval(timer);
+  }, [cycleKey, cycleActive]);
+
+  useEffect(() => {
+    const stop = () => setCycleActive(false);
+    window.addEventListener("click", stop, { once: true });
+    return () => window.removeEventListener("click", stop);
+  }, []);
+
+  const handleTabClick = (t: "npm" | "web" | "claude") => {
+    setActiveTab(t);
+    setCycleActive(false);
+  };
 
   useEffect(() => {
     fetch("/api/local-data/status")
@@ -438,7 +528,7 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
             onClick={handleDemo}
             className="w-full bg-surface-container-low hover:bg-surface-container border border-on-surface/8 text-on-surface/60 hover:text-on-surface rounded-xl px-4 py-3 font-label text-[11px] font-bold uppercase tracking-wider transition-all duration-200"
           >
-            Try demo
+            Try a demo!
           </button>
 
           <AnimatePresence>
@@ -538,7 +628,7 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center px-6 pt-20 pb-12 relative overflow-hidden"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -592,9 +682,9 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
-            className="relative z-10 w-full max-w-5xl flex flex-col md:flex-row items-center gap-12 md:gap-16"
+            className="relative z-10 w-full max-w-5xl"
           >
-            <div className="flex-1 flex flex-col items-center md:items-start w-full max-w-lg">
+            <div className="flex flex-col items-center md:items-start w-full max-w-lg">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -611,18 +701,12 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
                 </p>
               </motion.div>
 
-              <motion.div
-                layout
-                className="w-full max-w-md rounded-2xl overflow-hidden border border-on-surface/10 bg-[rgba(0,0,0,0.25)] flex flex-col"
-              >
+              <div className="w-full max-w-md rounded-2xl border border-on-surface/10 bg-[rgba(0,0,0,0.25)] flex flex-col">
                 <div className="flex border-b border-on-surface/10 bg-black/20">
                   {(["npm", "web", "claude"] as const).map((t, idx) => (
                     <button
                       key={t}
-                      onClick={() => {
-                        setActiveTab(t);
-                        if (t === "npm") setEverExpandedNpm(true);
-                      }}
+                      onClick={() => handleTabClick(t)}
                       className={`relative flex-1 py-3.5 px-3 flex items-center justify-center gap-2 font-mono text-[11px] transition-colors ${idx !== 0 ? "border-l border-on-surface/10" : ""} ${activeTab === t ? "bg-white/5" : "hover:bg-white/5"}`}
                       style={{ color: activeTab === t ? "#faf9f5" : "rgba(250,249,245,0.5)" }}
                     >
@@ -674,14 +758,22 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
                       {activeTab === t && (
                         <div className="absolute left-0 right-0 bottom-[-1px] h-[1px] bg-[rgba(23,23,23,1)] z-10" />
                       )}
+                      {/* Progress bar — only while auto-cycling */}
+                      {activeTab === t && cycleActive && (
+                        <motion.div
+                          key={`prog-${cycleKey}`}
+                          className="absolute left-0 bottom-0 h-[2px] bg-primary"
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: CYCLE_MS / 1000, ease: "linear" }}
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
-                <motion.div
-                  className="p-5 flex flex-col"
-                  style={{ minHeight: activeTab === "npm" || everExpandedNpm ? "280px" : undefined }}
-                  layout
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                <div
+                  className="p-5 pt-3 pb-4 flex flex-col"
+                  style={{ minHeight: activeTab === "npm" ? "280px" : undefined }}
                 >
                   <AnimatePresence mode="wait">
                     {activeTab === "npm" && (
@@ -718,21 +810,28 @@ export default function UploadScreen({ onDataParsed }: UploadScreenProps) {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.35 }}
-              className="shrink-0 hidden md:block"
-            >
-              <PreviewCards />
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Preview cards — fixed to viewport center, independent of tab height */}
+      {!isLoading && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="fixed inset-0 pointer-events-none hidden md:flex items-center justify-end px-6 z-10"
+        >
+          <div className="w-full max-w-5xl mx-auto flex justify-end">
+            <div className="pointer-events-auto">
+              <PreviewCards />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <AnimatePresence>
         {isDragging && (
