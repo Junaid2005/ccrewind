@@ -157,9 +157,9 @@ describe("computeStats", () => {
 
   it("resolves session slug paths to real project paths", () => {
     const stats = computeStats(richData);
-    // -home-user-project-a should resolve to /home/user/project-a
+    // -home-user-project-a should resolve to /home/user/project-a, displayed as basename
     const projectNames = stats.topProjectStats.map((p) => p.name);
-    expect(projectNames).toContain("/home/user/project-a");
+    expect(projectNames).toContain("project-a");
   });
 
   it("counts tool calls from session messages", () => {
