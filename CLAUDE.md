@@ -127,6 +127,10 @@ Upload screen includes hidden folder visibility instructions per OS (macOS: Cmd+
   - `npm run build:tui` — esbuild bundle (runs automatically via `prepublishOnly`)
   - `npm run setup:command` — install /ccrewind slash command from local build
   - `"files": ["dist/"]` in package.json overrides .gitignore so dist/ is included in npm publish
+- npm package: published as `ccrewind`, bin entry `ccrewind` → `dist/ccrewind-tui.mjs`
+  - `npm run build:tui` — esbuild bundle (runs automatically via `prepublishOnly`)
+  - `npm run setup:command` — install /ccrewind slash command from local build
+  - `"files": ["dist/"]` in package.json overrides .gitignore so dist/ is included in npm publish
 
 ### Project name normalisation (important)
 

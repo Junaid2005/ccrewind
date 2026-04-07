@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import path from "path";
 import os from "os";
 import { fileURLToPath } from "url";
+import { MASCOT_ART } from "./mascots-ansi";
 
 // ── ANSI helpers ──────────────────────────────────────────
 
@@ -27,7 +28,30 @@ const gray = (s: string) => `${GRAY}${s}${RESET}`;
 const gold = (s: string) => `${GOLD}${s}${RESET}`;
 const green = (s: string) => `${GREEN}${s}${RESET}`;
 
+const COL_WIDTH = Math.max(60, process.stdout.columns || 80);
+
 // ── Formatting helpers ────────────────────────────────────
+
+function visibleLen(s: string): number {
+  return s.replace(/\x1b\[[0-9;]*m/g, "").length;
+}
+
+function wrapLine(text: string, maxWidth: number, indent: string = ""): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let cur = "";
+  for (const word of words) {
+    const test = cur ? `${cur} ${word}` : word;
+    if (visibleLen(test) > maxWidth && cur) {
+      lines.push(indent + cur);
+      cur = word;
+    } else {
+      cur = test;
+    }
+  }
+  if (cur) lines.push(indent + cur);
+  return lines.length ? lines : [indent];
+}
 
 function formatNumber(n: number): string {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -89,11 +113,11 @@ function renderCalendar(activeDates: string[]): string[] {
       const dateStr = date.toISOString().split("T")[0];
 
       if (date > today) {
-        line += " ";
+        line += "  ";
       } else if (activeSet.has(dateStr)) {
-        line += orange("\u2593");
+        line += orange("\u2593") + " ";
       } else {
-        line += gray("\u2591");
+        line += gray("\u2591") + " ";
       }
     }
     lines.push(line);
@@ -102,27 +126,28 @@ function renderCalendar(activeDates: string[]): string[] {
 }
 
 function renderEloBar(score: number, max: number = 1000): string {
-  const filled = Math.round((score / max) * 20);
-  return orange("\u25B0".repeat(filled)) + gray("\u25B1".repeat(20 - filled));
+  const width = Math.max(10, COL_WIDTH - 4);
+  const filled = Math.round((score / max) * width);
+  return orange("\u25B0".repeat(filled)) + gray("\u25B1".repeat(width - filled));
 }
 
 // ── Section renderers ─────────────────────────────────────
 
 function sectionHeader(title: string): string {
-  const dashes = "\u2500".repeat(Math.max(1, 44 - title.length - 5));
+  const dashes = "\u2500".repeat(Math.max(1, COL_WIDTH - title.length - 5));
   return orange(`\u2500\u2500\u2500 ${title} ${dashes}`);
 }
 
 function renderHeader(): string {
+  const inner = COL_WIDTH - 2;
+  const title = "\u27E1  CC REWIND  \u27E1";
+  const lpad = Math.floor((inner - title.length) / 2);
+  const rpad = inner - title.length - lpad;
   return [
     "",
-    orange(
-      "\u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557"
-    ),
-    orange("\u2551") + bold(white("               \u27E1  CC REWIND  \u27E1                ")) + orange("\u2551"),
-    orange(
-      "\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u255D"
-    ),
+    orange("\u2554" + "\u2550".repeat(inner) + "\u2557"),
+    orange("\u2551") + bold(white(" ".repeat(lpad) + title + " ".repeat(rpad))) + orange("\u2551"),
+    orange("\u255A" + "\u2550".repeat(inner) + "\u255D"),
     dim("  \uD83D\uDD12 All data stays on your machine."),
     "",
   ].join("\n");
@@ -142,15 +167,15 @@ function renderTopTools(stats: ComputedStats): string {
   const tools = stats.topTools.slice(0, 7);
   if (tools.length === 0) return "";
   const maxCount = tools[0].count;
-  const maxNameLen = Math.max(...tools.map((t) => t.name.length));
+  const maxNameLen = COL_WIDTH - 2;
+  const BAR_WIDTH = Math.max(10, COL_WIDTH - 14);
   const lines = [sectionHeader("TOP TOOLS")];
   for (const tool of tools) {
-    const name = pad(white(tool.name), maxNameLen + 8);
-    const bar = orange(renderBar(tool.count, maxCount, 20));
-    const count = white(formatNumber(tool.count).padStart(7));
-    lines.push(`  ${name} ${bar}  ${count}`);
+    const name = tool.name.length > maxNameLen ? tool.name.slice(0, maxNameLen - 1) + "…" : tool.name;
+    lines.push(`  ${white(name)}`);
+    lines.push(`    ${orange(renderBar(tool.count, maxCount, BAR_WIDTH))}  ${white(formatNumber(tool.count))}`);
+    lines.push("");
   }
-  lines.push("");
   return lines.join("\n");
 }
 
@@ -171,17 +196,20 @@ function renderCostAndModels(stats: ComputedStats): string {
   if (allModels.length === 0) return "";
 
   const maxCount = Math.max(...allModels.map((m) => m.count));
-  const maxNameLen = Math.max(...allModels.map((m) => m.model.length));
+  const maxNameLen = COL_WIDTH - 2;
+  // 4 indent + bar + 2 + 4 pct + 2 + 8 cost = 20 overhead
+  const BAR_WIDTH = Math.max(10, COL_WIDTH - 20);
 
   const lines = [sectionHeader("COST & MODELS")];
   lines.push(`  ${bold(orange(`$${stats.estimatedCostUSD.toFixed(2)}`))}  ${dim("estimated total spend")}`);
   lines.push("");
   for (const { model, count, cost } of allModels) {
     const pct = modelUsageTotal > 0 ? Math.round((count / modelUsageTotal) * 100) : 0;
-    const name = pad(white(model), maxNameLen + 8);
-    const bar = orange(renderBar(count, maxCount, 16));
+    const name = model.length > maxNameLen ? model.slice(0, maxNameLen - 1) + "…" : model;
+    const bar = orange(renderBar(count, maxCount, BAR_WIDTH));
     const costStr = cost >= 0.01 ? orange(`$${cost.toFixed(2)}`) : dim("< $0.01");
-    lines.push(`  ${name} ${bar}  ${dim(`${pct}%`)}  ${costStr}`);
+    lines.push(`  ${white(name)}`);
+    lines.push(`    ${bar}  ${dim(`${pct}%`)}  ${costStr}`);
   }
   lines.push("");
   return lines.join("\n");
@@ -198,20 +226,22 @@ function renderTokenUsage(stats: ComputedStats): string {
 
   const pct = (v: number) => (total > 0 ? `(${Math.round((v / total) * 100)}%)` : "");
 
+  // 2 + 12 name + 1 + bar + 2 + 7 count + 2 + 6 pct = 32 overhead
+  const BAR_WIDTH = Math.max(10, COL_WIDTH - 32);
   const lines = [sectionHeader("TOKEN USAGE")];
   lines.push(dim(`  Total: ${formatNumber(total)} tokens`));
   lines.push("");
   lines.push(
-    `  ${pad(white("Input"), 14)}  ${orange(renderBar(stats.totalInputTokens, maxToken, 20))}  ${white(formatNumber(stats.totalInputTokens))}  ${dim(pct(stats.totalInputTokens))}`
+    `  ${pad(white("Input"), 12)} ${orange(renderBar(stats.totalInputTokens, maxToken, BAR_WIDTH))}  ${white(formatNumber(stats.totalInputTokens))}  ${dim(pct(stats.totalInputTokens))}`
   );
   lines.push(
-    `  ${pad(white("Output"), 14)}  ${orange(renderBar(stats.totalOutputTokens, maxToken, 20))}  ${white(formatNumber(stats.totalOutputTokens))}  ${dim(pct(stats.totalOutputTokens))}`
+    `  ${pad(white("Output"), 12)} ${orange(renderBar(stats.totalOutputTokens, maxToken, BAR_WIDTH))}  ${white(formatNumber(stats.totalOutputTokens))}  ${dim(pct(stats.totalOutputTokens))}`
   );
   lines.push(
-    `  ${pad(gold("Cache Read"), 14)}  ${gold(renderBar(stats.totalCacheReadTokens, maxToken, 20))}  ${gold(formatNumber(stats.totalCacheReadTokens))}  ${dim(pct(stats.totalCacheReadTokens))}`
+    `  ${pad(gold("Cache Read"), 12)} ${gold(renderBar(stats.totalCacheReadTokens, maxToken, BAR_WIDTH))}  ${gold(formatNumber(stats.totalCacheReadTokens))}  ${dim(pct(stats.totalCacheReadTokens))}`
   );
   lines.push(
-    `  ${pad(gold("Cache Write"), 14)}  ${gold(renderBar(stats.totalCacheCreationTokens, maxToken, 20))}  ${gold(formatNumber(stats.totalCacheCreationTokens))}  ${dim(pct(stats.totalCacheCreationTokens))}`
+    `  ${pad(gold("Cache Write"), 12)} ${gold(renderBar(stats.totalCacheCreationTokens, maxToken, BAR_WIDTH))}  ${gold(formatNumber(stats.totalCacheCreationTokens))}  ${dim(pct(stats.totalCacheCreationTokens))}`
   );
   lines.push("");
   return lines.join("\n");
@@ -230,12 +260,13 @@ function renderTopProjects(stats: ComputedStats): string {
     }))
     .sort((a, b) => b.estimatedCost - a.estimatedCost);
 
-  const maxNameLen = Math.max(...projects.map((p) => p.shortName.length));
+  const maxNameLen = COL_WIDTH - 2;
   const lines = [sectionHeader("TOP PROJECTS")];
   for (const p of projects) {
-    const name = pad(white(p.shortName), maxNameLen + 8);
+    const name = p.shortName.length > maxNameLen ? p.shortName.slice(0, maxNameLen - 1) + "…" : p.shortName;
     const cost = p.estimatedCost >= 0.01 ? orange(`$${p.estimatedCost.toFixed(2)}`) : dim("< $0.01");
-    lines.push(`  ${name}  ${cost}   ${dim(`${formatNumber(p.messages)} msgs`)}   ${dim(`${p.sessions} sessions`)}`);
+    lines.push(`  ${white(name)}`);
+    lines.push(`    ${cost}  ${dim(`${formatNumber(p.messages)} msgs`)}  ${dim(`${p.sessions} sessions`)}`);
   }
   lines.push("");
   return lines.join("\n");
@@ -268,25 +299,43 @@ function renderStreak(stats: ComputedStats): string {
 }
 
 function renderCharacterReveal(_stats: ComputedStats, elo: EloBreakdown, character: Character): string {
-  return [
+  const lines: string[] = [
     sectionHeader("YOUR CHARACTER"),
     "",
     `  ${orange("\u2726")} ${bold(white(character.name))} ${orange("\u2726")}`,
-    `  ${dim('"')}${white(character.oneLiner)}${dim('"')}`,
+    ...(() => {
+      const wrapped = wrapLine(character.oneLiner, COL_WIDTH - 4, "  ");
+      return wrapped.map((line, i) => {
+        const text = line.trimStart();
+        if (wrapped.length === 1) return `  ${dim('"')}${white(text)}${dim('"')}`;
+        if (i === 0) return `  ${dim('"')}${white(text)}`;
+        if (i === wrapped.length - 1) return `  ${white(text)}${dim('"')}`;
+        return `  ${white(text)}`;
+      });
+    })(),
     "",
+  ];
+
+  const art = MASCOT_ART[character.name];
+  if (art) {
+    art.split("\n").forEach((l) => lines.push("  " + l));
+    lines.push("");
+  }
+
+  lines.push(
     `  Claude Elo: ${bold(orange(String(elo.total)))} / 1000`,
     `  ${renderEloBar(elo.total)}`,
     "",
     `  ${dim(character.endingLine)}`,
-    "",
-  ].join("\n");
+    ""
+  );
+
+  return lines.join("\n");
 }
 
 function renderFooter(): string {
   return [
-    orange(
-      "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
-    ),
+    orange("\u2500".repeat(COL_WIDTH)),
     `  ${dim("Full visual experience \u2192")} ${orange("ccrewind.com")}`,
     "",
   ].join("\n");
