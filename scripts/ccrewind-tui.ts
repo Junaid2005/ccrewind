@@ -350,14 +350,22 @@ async function runGui(): Promise<void> {
   // Try 1: running from the repo (dist/ccrewind-tui.mjs → repo root is parent)
   let repoRoot = path.dirname(bundleDir);
   let isRepoContext = false;
-  try {
-    const pkg = JSON.parse(await fs.readFile(path.join(repoRoot, "package.json"), "utf-8")) as {
-      dependencies?: Record<string, string>;
-    };
-    isRepoContext = !!pkg.dependencies?.next;
-  } catch {
-    isRepoContext = false;
+
+  async function isValidRepoRoot(dir: string): Promise<boolean> {
+    try {
+      const pkg = JSON.parse(await fs.readFile(path.join(dir, "package.json"), "utf-8")) as {
+        dependencies?: Record<string, string>;
+      };
+      if (!pkg.dependencies?.next && !pkg.devDependencies?.next) return false;
+      // Must have src/app to be a real clone, not just the npm package
+      await fs.access(path.join(dir, "src", "app"));
+      return true;
+    } catch {
+      return false;
+    }
   }
+
+  isRepoContext = await isValidRepoRoot(repoRoot);
 
   // Try 2: installed copy — check config written by --setup
   if (!isRepoContext) {
@@ -365,14 +373,9 @@ async function runGui(): Promise<void> {
       const config = JSON.parse(await fs.readFile(path.join(bundleDir, "config.json"), "utf-8")) as {
         repoRoot?: string;
       };
-      if (config.repoRoot) {
-        const pkg = JSON.parse(await fs.readFile(path.join(config.repoRoot, "package.json"), "utf-8")) as {
-          dependencies?: Record<string, string>;
-        };
-        if (pkg.dependencies?.next) {
-          repoRoot = config.repoRoot;
-          isRepoContext = true;
-        }
+      if (config.repoRoot && (await isValidRepoRoot(config.repoRoot))) {
+        repoRoot = config.repoRoot;
+        isRepoContext = true;
       }
     } catch {
       isRepoContext = false;
@@ -438,8 +441,9 @@ async function runSetup(): Promise<void> {
   try {
     const pkg = JSON.parse(await fs.readFile(path.join(repoRoot, "package.json"), "utf-8")) as {
       dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
     };
-    if (pkg.dependencies?.next) {
+    if (pkg.dependencies?.next || pkg.devDependencies?.next) {
       await fs.writeFile(configDest, JSON.stringify({ repoRoot }), "utf-8");
     }
   } catch {
@@ -451,16 +455,7 @@ async function runSetup(): Promise<void> {
     "---",
     "description: Run your CC Rewind stats report inline",
     "---",
-    "Run this command and show the output verbatim. Do not add any commentary, analysis, or surrounding text before or after the output:",
-    "",
-    "```bash",
-    "node ~/.local/share/ccrewind/ccrewind-tui.mjs",
-    "```",
-    "",
-    "If the command fails because the file is not found, tell the user to install it:",
-    "```",
-    "npx ccrewind --setup",
-    "```",
+    "Run the ccrewind stats report using the ccrewind skill.",
     "",
   ].join("\n");
   await fs.writeFile(commandDest, commandContent, "utf-8");
@@ -471,17 +466,7 @@ async function runSetup(): Promise<void> {
     "---",
     "description: Open CC Rewind web UI with your local ~/.claude data",
     "---",
-    "Run this command and show its output verbatim:",
-    "",
-    "```bash",
-    "node ~/.local/share/ccrewind/ccrewind-tui.mjs --gui",
-    "```",
-    "",
-    "If the command outputs a message about needing a local repo clone, show it to the user verbatim.",
-    "If the command fails because the file is not found, tell the user to install it:",
-    "```",
-    "npx ccrewind --setup",
-    "```",
+    "Open the CC Rewind web UI using the ccrewind-ui skill.",
     "",
   ].join("\n");
   await fs.writeFile(uiCommandDest, uiCommandContent, "utf-8");
